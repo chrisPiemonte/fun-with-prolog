@@ -60,9 +60,9 @@ removepos(P, Xs, Ys) :-
 	removepos_acc(P, 0, Xs, Ys) .
 
 % accumulator version of above
-removepos_acc(P, Acc, [], []) .
+removepos_acc(P, Acc, [], []) :- ! .
 removepos_acc(P, Acc, [X|Xs], Xs) :-
-	P = Acc .
+	P = Acc, ! .
 removepos_acc(P, Acc, [X|Xs], [X|Ys]) :-
 	P > Acc,
 	Acc1 is Acc + 1,
@@ -72,7 +72,7 @@ removepos_acc(P, Acc, [X|Xs], [X|Ys]) :-
 % param 1 - INPUT  - list1
 % param 2 - INPUT  - list2
 % param 3 - OUTPUT - [ lista1 | lista2 ]
-concat([], Ys, Ys) .
+concat([], Ys, Ys) :- ! .
 concat([X|Xs], Ys, [X|Zs]) :-
 	concat(Xs, Ys, Zs) .
 	
@@ -190,13 +190,13 @@ findminpos_acc([X|Xs], MinTemp, MinTempPos, Acc, P) :-
 	findminpos_acc(Xs, X, Acc, Acc1, P) .
 	
 
-% ==================================================
-% ==================================================
+% ====================================================================
+% ====================================================================
 
-%       SORTING ALGORITHM
+%                      SORTING ALGORITHM
 
-% ==================================================
-% ==================================================
+% ====================================================================
+% ====================================================================
 
 
 % check if a list of integers is ordered
@@ -218,7 +218,7 @@ permute(Xs, [Z|Zs]) :-
 	permute(Ys, Zs) .
 
 
-% Generate and test sorting algorithm ------------
+% Generate and test sorting algorithm --------------------------------
 % it generates a permutation and tests if it's ordered
 % param 1 - INPUT  - list
 % param 2 - OUTPUT - sorted list
@@ -238,7 +238,7 @@ swap(P1, P2, Xs, Zs) :-
 	update(E2, P1, Ys, Zs), ! .
 
 
-% selection sort ---------------------------------
+% selection sort -----------------------------------------------------
 % param 1 - INPUT  - list
 % param 2 - OUTPUT - sorted list
 selectionsort([], []) :- !.
@@ -274,7 +274,7 @@ restandmax([X, Y|Ys], [X|Zs], Max) :-
 	restandmax([Y|Ys], Zs, Max) .
 	
 
-% Bubble sort ------------------------------------
+% Bubble sort --------------------------------------------------------
 % param 1 - INPUT  - list
 % param 2 - OUTPUT - sorted list
 bubblesort(Xs, Ys) :-
@@ -287,7 +287,7 @@ bubblesort_acc(Xs, Acc, Ys) :-
 	bubblesort_acc(Rest, [Max|Acc], Ys) .
 
 
-% Merge sort -------------------------------------
+% Merge sort ---------------------------------------------------------
 % param 1 - INPUT  - list
 % param 2 - OUTPUT - sorted list
 mergesort([], []) :- ! .
@@ -326,42 +326,83 @@ merge([X|Xs], [Y|Ys], [Y|Zs]) :-
 
 % middle pos in the list
 % param 1 - INPUT  - list
-% param 2 - OUTPUT - 1st half of the list 
+% param 2 - OUTPUT - middle pos of the list 
 middlepos([X], 0) :- ! .
 middlepos(Xs, Mid) :- 
 	len(Xs, L),
 	Mid is L // 2 .
 
+% choosing pivot as middle elem
+% param 1 - INPUT  - list
+% param 2 - OUTPUT - 1st half of the list 
+pivot(Xs, Pos, Elem) :-
+	middlepos(Xs, Pos),
+	eleminpos(Pos, Xs, Elem), ! .
 
-pivot(Xs, P) :-
-	middlepos(Xs, P) .
 
+% split a list in 2 lists
+% param 1 - INPUT  - list
+% param 2 - INPUT  - elem e of the list
+% param 3 - OUTPUT - part of the list w/ elem =< e
+% param 4 - OUTPUT - part of the list w/ elem  > e 
+partition([], Pivot, [], []) :- ! .
+partition([X|Xs], Pivot, [X|Ys], Zs) :- 
+	X =< Pivot,
+	partition(Xs, Pivot, Ys, Zs) , ! .
+partition([X|Xs], Pivot, Ys, [X|Zs]) :- 
+	X > Pivot,
+	partition(Xs, Pivot, Ys, Zs) .
+	
 
+% Quick sort ---------------------------------------------------------
+% param 1 - INPUT  - list
+% param 2 - OUTPUT - sorted list
 quicksort([], []) :- ! .
-quicksort(Xs, Ys) :- 
-	pivot(Xs, P).
-
-% ==================================================
-% ==================================================
-
-%       STUFF
-
-% ==================================================
-% ==================================================
+quicksort(Xs, Sorted) :- 
+	pivot(Xs, Pos, Pivot),
+	removepos(Pos, Xs, X1s),
+	partition(X1s, Pivot, Ys, Zs),
+	quicksort(Ys, Y1s),
+	quicksort(Zs, Z1s),
+	concat(Y1s, [Pivot|Z1s], Sorted) .
 
 
-bubblesort_c(List, Sorted) :- 
-	bsort_c(List, [], Sorted).
+% ====================================================================
+% ====================================================================
 
-bsort_c([], Acc, Acc). :- ! .
-bsort_c([H|T], Acc, Sorted) :- 
-	bubble_c(H, T, NT, Max), 
-	bsort_c(NT, [Max|Acc], Sorted) .
+%                      STUFF
+
+% ====================================================================
+% ====================================================================
+
+
+bubblesort2(List, Sorted) :- 
+	bsort2(List, [], Sorted).
+
+bsort2([], Acc, Acc). :- ! .
+bsort2([H|T], Acc, Sorted) :- 
+	bubble2(H, T, NT, Max), 
+	bsort2(NT, [Max|Acc], Sorted) .
    
-bubble_c(X, [], [], X) :- ! .
-bubble_c(X, [Y|T], [Y|NT], Max) :- 
+bubble2(X, [], [], X) :- ! .
+bubble2(X, [Y|T], [Y|NT], Max) :- 
 	X > Y, 
-	bubble_c(X, T, NT, Max), !.
-bubble_c(X, [Y|T], [X|NT], Max) :- 
+	bubble2(X, T, NT, Max), !.
+bubble2(X, [Y|T], [X|NT], Max) :- 
 	X =< Y, 
-	bubble_c(Y, T, NT, Max) .
+	bubble2(Y, T, NT, Max) .
+
+pivoting(H, [], [], []) .
+pivoting(H, [X|T], [X|L], G) :- 
+	X =< H, 
+	pivoting(H, T, L, G) .
+pivoting(H, [X|T], L, [X|G]) :- 
+	X > H, 
+	pivoting(H, T, L, G) .
+
+quick_sort([], []) .
+quick_sort([H|T], Sorted) :- 
+	pivoting(H, T, L1, L2), 
+	quick_sort(L1, Sorted1), 
+	quick_sort(L2, Sorted2), 
+	concat(Sorted1, [H|Sorted2], Sorted) .
