@@ -86,7 +86,7 @@ add(X, Ys, [X|Ys]) .
 % param 1 - INPUT  - elem to add in last place
 % param 2 - INPUT  - list
 % param 3 - OUTPUT - [ list | elem ]
-tailadd(X, [], [X]) .
+tailadd(X, [], [X]) :- ! .
 tailadd(X, [Y|Ys], [Y|Zs]) :-
 	tailadd(X, Ys, Zs) .
 
@@ -301,8 +301,8 @@ mergesort(Xs, Sorted) :-
 
 % It divides the list but it doesn't keep the same order
 % param 1 - INPUT  - list
-% param 2 - OUTPUT - 1st half of the list 
-% param 3 - OUTPUT - 2nd half of the list 
+% param 2 - OUTPUT - one half of the list 
+% param 3 - OUTPUT - another half of the list 
 divide([], [], []) :- ! .
 divide([X], [], [X]) :- ! .
 divide([X, Y|Ys], [X|T1], [Y|T2]) :- 
@@ -340,6 +340,14 @@ pivot(Xs, Pos, Elem) :-
 	eleminpos(Pos, Xs, Elem), ! .
 
 
+% renaming removepos
+% param 1 - INPUT  - position to remove
+% param 2 - INPUT  - list
+% param 3 - OUTPUT - list w/out elem in that position
+removepivot(Pos, Xs, Ys) :-
+	removepos(Pos, Xs, Ys) .
+
+
 % split a list in 2 lists
 % param 1 - INPUT  - list
 % param 2 - INPUT  - elem e of the list
@@ -357,14 +365,31 @@ partition([X|Xs], Pivot, Ys, [X|Zs]) :-
 % Quick sort ---------------------------------------------------------
 % param 1 - INPUT  - list
 % param 2 - OUTPUT - sorted list
-quicksort([], []) :- ! .
-quicksort(Xs, Sorted) :- 
+quick_sort([], []) :- ! .
+quick_sort(Xs, Sorted) :- 
 	pivot(Xs, Pos, Pivot),
-	removepos(Pos, Xs, X1s),
+	removepivot(Pos, Xs, X1s),
 	partition(X1s, Pivot, Ys, Zs),
-	quicksort(Ys, Y1s),
-	quicksort(Zs, Z1s),
+	quick_sort(Ys, Y1s),
+	quick_sort(Zs, Z1s),
 	concat(Y1s, [Pivot|Z1s], Sorted) .
+
+
+% Quick sort ---------------------------------------------------------
+% param 1 - INPUT  - list
+% param 2 - OUTPUT - sorted list
+quicksort(Xs, Ys) :- 
+	quicksort_acc(Xs, [], Ys) .
+
+% accumulator version af above
+quicksort_acc([], Acc, Acc) :- ! .
+quicksort_acc(Xs, Acc, Sorted) :- 
+	pivot(Xs, Pos, Pivot),
+	removepivot(Pos, Xs, X1s),
+	partition(X1s, Pivot, Ys, Zs),
+	quicksort_acc(Ys, Acc, Y1s),
+	tailadd(Pivot, Y1s, Y2s),
+	quicksort_acc(Zs, Y2s, Sorted) .
 
 
 % ====================================================================
@@ -400,9 +425,19 @@ pivoting(H, [X|T], L, [X|G]) :-
 	X > H, 
 	pivoting(H, T, L, G) .
 
-quick_sort([], []) .
-quick_sort([H|T], Sorted) :- 
+quick_sort2([], []) .
+quick_sort2([H|T], Sorted) :- 
 	pivoting(H, T, L1, L2), 
-	quick_sort(L1, Sorted1), 
-	quick_sort(L2, Sorted2), 
+	quick_sort2(L1, Sorted1), 
+	quick_sort2(L2, Sorted2), 
 	concat(Sorted1, [H|Sorted2], Sorted) .
+
+
+quick_sort3(List, Sorted) :- 
+	q_sort(List, [], Sorted) .
+
+q_sort([], Acc, Acc) .
+q_sort([H|T], Acc, Sorted) :- 
+	pivoting(H, T, L1, L2), 
+	q_sort(L1, Acc, Sorted1), 
+	q_sort(L2, [H|Sorted1], Sorted) .
