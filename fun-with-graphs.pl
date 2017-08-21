@@ -29,7 +29,6 @@
 %             +-+--v+              |
 %             |  G  +--------------+
 %             +-----+      L9
-%            
 % 
 
 % REPRESENTATION A
@@ -49,18 +48,12 @@ g(
 	]
 ) .
 
-
-edgeA(g(Vs,Es), V1, V2, Label) :- 
-	member(e(V1,V2,Label), Es) .
-
 edge(G, V1, V2, Label) :- 
 	call(G, Vs, Es),
 	member(e(V1,V2,Label), Es) .
 
-
 neighborhood(G, Source, NB) :- 
 	setof(Dest-Label, edge(G, Source, Dest, Label), NB) .
-
 
 edgeNotDir(G, V1, V2, Label) :-
 	call(G, Vs, Es), 
@@ -83,12 +76,10 @@ g1([
 	g - [f - 'L9']
 ]) .
 
-
 edgeB(G, V1, V2, Label) :- 
 	call(G, Dict),
 	member(V1-NB, Dict),
 	member(V2-Label, NB) .
-
 
 neighborhoodB(G, V, NB) :- 
 	call(G, Dict),
@@ -119,15 +110,32 @@ naive_coloring(G, Colors, Coloring) :-
 
 generate([], _, []) :- ! .
 generate([V|Vs], Colors, [V-C|Coloring]) :- 
-	member(C, Colors),                % non-deterministic generator of colors
+	member(C, Colors),                       % non-deterministic generator of colors
 	generate(Vs, Colors, Coloring) .
 
 test([], _) .
 test([e(V1,V2,L)|Es], Coloring) :- 
 	member(V1-C1, Coloring), 
 	member(V2-C2, Coloring), 
-	C1 \= C2,                         % test if adjacent vertices have diff colors
+	C1 \= C2,                                % test if adjacent vertices have diff colors
 	test(Es, Coloring) .
 
 
+% smarter generate and test
+smarter_coloring(G, Colors, Coloring) :- 
+	call(G, Vs, Es), 
+	smarter_coloring_acc(Vs, Es, Colors, [], Coloring) .   % generate and test
+
+smarter_coloring_acc([], _, _, Acc, Acc) :- ! .
+smarter_coloring_acc([V|Vs], Es, Colors, Acc, Coloring) :- 
+	member(C, Colors),                                     % generate color for vertex V
+	vertex_test(Es, V, C, Acc),                            % test the validity of curr coloring
+	smarter_coloring_acc(Vs, Es, Colors, [V-C|Acc], Coloring) .
+
+vertex_test([], _, _, _) :- ! .
+vertex_test([e(V1,V2,L)|Es], V, C, CurrColoring) :- 
+	(V = V1 -> (member(V2-C2,CurrColoring) -> C \= C2 ; true) ; 
+	(V = V2 -> (member(V1-C1,CurrColoring) -> C \= C1 ; true) ; 
+	true )), 
+	vertex_test(Es, V, C, CurrColoring) .
 
