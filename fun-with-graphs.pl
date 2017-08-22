@@ -10,25 +10,25 @@
 % ====================================================================
           
 %            
-%                              +-----+     L2
-%                              |  C  +---------+
-%                              +-----+         |
-%              +-----+                      +--v--+
-%              |  A  +--------------------> |  B  +--+
-%              +-+---+        L1            +-+---+  |
-%                ^                            |      |
-%             L6 |                            |      | L4
-%                |                            |      |
-%            +---+-+           L3             |  +---v-+
-%            |  D  <--------------------------+  |  E  |
-%            +--+--+                             +--+--+
-%               |                                   |
-%            L5 |          L7       +-----+         |
-%               |  +----------------+  F  | <-------+
-%               v  |                +--^--+       L8
-%             +-+--v+                  |
-%             |  G  +------------------+
-%             +-----+          L9
+%                                   +-----+     L2
+%                                   |  C  +---------+
+%                                   +-----+         |
+%           +-----+                              +--v--+
+%           |  A  +----------------------------> |  B  +--+
+%           +-+---+            L1                +-+---+  |
+%             ^                                    |      |
+%          L6 |                                    |      | L4
+%             |                                    |      |
+%         +---+-+              L3                  |  +---v-+
+%         |  D  <----------------------------------+  |  E  |
+%         +--+--+                                     +--+--+
+%            |                                           |
+%         L5 |               L7          +-----+         |
+%            |  +------------------------+  F  | <-------+
+%            v  |                        +--^--+       L8
+%          +-+--v+                          |
+%          |  G  +--------------------------+
+%          +-----+           L9
 %     
 
 % REPRESENTATION A
@@ -147,6 +147,7 @@ vertex_test([e(V1,V2,L)|Es], V, C, CurrColoring) :-
 	vertex_test(Es, V, C, CurrColoring) .
 
 
+
 % forward checking coloring
 forward_checking_coloring(G, Colors, Coloring) :- 
 	call(G, Vs, Es), 
@@ -157,26 +158,27 @@ prep([], _ , []) .
 prep([V|Vs], Colors, [V-Colors|Supercoloring]) :- 
 	prep(Vs, Colors, Supercoloring) .
 
-
 gtb([], _, Acc, Acc) .
-gtb([V-Cs|Vs], Es, Acc, Coloring) :- 
-	member(C, Cs),
-	forward_checking(Es, V, C, Vs, ConstrainedVs), 
-	gtb(ConstrainedVs, Es, [V-C|Acc], Coloring) .
+gtb([V-Cs|VCs], Es, Acc, Coloring) :- 
+	member(C, Cs),                                    % choose a color
+	forward_checking(Es, V, C, VCs, ConstrainedVCs),  % question if C is good for V if yes you have a new supercoloring (last arg) without C from V neighborhood
+	gtb(ConstrainedVCs, Es, [V-C|Acc], Coloring) .
 
-forward_checking([], _, _, Vs, Vs) .
-forward_checking([e(V1,V2,L)|Es], V, C, Vs, ConstrVs) :- 
-	(V = V1 -> constr(Vs, V2, C, NewVs)
-		; (V = V2 -> constr(Vs, V1, C, NewVs)
-			; NewVs = Vs)),
-	forward_checking(Es, V, C, NewVs, ConstrVs) .
+forward_checking([], _, _, VCs, VCs) .
+forward_checking([e(V1,V2,L)|Es], V, C, VCs, ConstrVs) :- % iterate over edges and for each v' connected to v delete that color from its set
+	(V = V1 -> 
+		constr(VCs, V2, C, NewVCs)
+		; (V = V2 -> 
+			constr(VCs, V1, C, NewVCs)
+			; NewVCs = VCs)),
+	forward_checking(Es, V, C, NewVCs, ConstrVs) .
 
-constr([V-Cs|Vs], V, C, [V-NewCs|Vs]) :- 
+constr([V-Cs|VCs], V, C, [V-NewCs|VCs]) :-   % find V and delete C from its set if its set becomes empty then it FAILS
 	delete(Cs, C, NewCs), 
 	NewCs \= [] .
-constr([V1-Cs|Vs], V, C, [V1-Cs|NewVs]) :- 
+constr([V1-Cs|VCs], V, C, [V1-Cs|NewVCs]) :- 
 	V \= V1,
-	constr(Vs, V, C, NewVs) .
+	constr(VCs, V, C, NewVCs) .
 constr([], _, _, []) .
 
 
